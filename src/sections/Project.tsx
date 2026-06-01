@@ -1,6 +1,6 @@
 import { useRef, useState, useEffect, useCallback } from 'react'
-import { motion, useInView } from 'framer-motion'
-import { FiExternalLink, FiGithub, FiChevronLeft, FiChevronRight } from 'react-icons/fi'
+import { motion, useInView, AnimatePresence } from 'framer-motion'
+import { FiExternalLink, FiGithub, FiChevronLeft, FiChevronRight, FiX, FiMail } from 'react-icons/fi'
 
 const screenshots = [
   'screenshots/0e812849ec6024fb8f6144bd78062c0a.png',
@@ -27,10 +27,82 @@ const techTags = [
   'React 19', 'FastAPI', 'SSE 流式', 'LLM 提示词工程', 'python-docx', 'Ant Design 6',
 ]
 
+function DemoModal({ onClose }: { onClose: () => void }) {
+  return (
+    <motion.div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+    >
+      {/* Backdrop */}
+      <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" />
+
+      {/* Modal */}
+      <motion.div
+        className="relative bg-white rounded-2xl shadow-2xl max-w-md w-full p-8"
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Close button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center hover:bg-gray-100 transition-colors"
+          style={{ color: 'var(--color-gray)' }}
+        >
+          <FiX size={18} />
+        </button>
+
+        {/* Icon */}
+        <div
+          className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5"
+          style={{ backgroundColor: 'rgba(37,99,235,0.1)' }}
+        >
+          <FiExternalLink size={26} style={{ color: 'var(--color-accent)' }} />
+        </div>
+
+        <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--color-text)' }}>
+          在线 Demo 演示
+        </h3>
+        <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--color-gray)' }}>
+          该系统目前运行于本地环境，支持真实招标文件上传、LLM 智能解析与 Word 文档一键生成全流程体验。
+          <br /><br />
+          如需安排远程演示或了解更多项目细节，欢迎通过邮件联系我。
+        </p>
+
+        {/* Contact CTA */}
+        <a
+          href="mailto:ncepudlgh@163.com?subject=申请招投标工作台 Demo 演示"
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-medium text-white transition-all duration-300 hover:opacity-90 hover:scale-[1.02] mb-3 text-sm"
+          style={{ backgroundColor: 'var(--color-accent)' }}
+        >
+          <FiMail size={16} />
+          发送演示申请邮件
+        </a>
+        <a
+          href="https://github.com/samzhao84-code/portfolio"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-medium border transition-all duration-300 hover:bg-gray-50 text-sm"
+          style={{ borderColor: 'var(--color-gray-light)', color: 'var(--color-text)' }}
+        >
+          <FiGithub size={16} />
+          查看 GitHub 源码
+        </a>
+      </motion.div>
+    </motion.div>
+  )
+}
+
 export default function Project() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [showDemoModal, setShowDemoModal] = useState(false)
 
   const nextSlide = useCallback(() => {
     setCurrentSlide(prev => (prev + 1) % screenshots.length)
@@ -45,6 +117,9 @@ export default function Project() {
     const timer = setInterval(nextSlide, 3000)
     return () => clearInterval(timer)
   }, [nextSlide])
+
+  // Build base path from import.meta.env
+  const base = import.meta.env.BASE_URL  // '/portfolio/' in prod, '/' in dev
 
   return (
     <section id="project" className="py-24 px-4 bg-white">
@@ -69,15 +144,18 @@ export default function Project() {
             className="relative"
           >
             <div className="overflow-hidden rounded-xl shadow-lg border border-gray-200">
-              <motion.img
-                key={currentSlide}
-                src={screenshots[currentSlide]}
-                alt={`截图 ${currentSlide + 1}`}
-                className="w-full aspect-[16/10] object-cover"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.4 }}
-              />
+              <AnimatePresence mode="wait">
+                <motion.img
+                  key={currentSlide}
+                  src={`${base}${screenshots[currentSlide]}`}
+                  alt={`截图 ${currentSlide + 1}`}
+                  className="w-full aspect-[16/10] object-cover"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.4 }}
+                />
+              </AnimatePresence>
             </div>
 
             {/* Arrows */}
@@ -166,28 +244,33 @@ export default function Project() {
 
             {/* Links */}
             <div className="flex gap-4">
-              <a
-                href="#"
-                className="px-6 py-2.5 rounded-full font-medium text-white transition-all duration-300 hover:scale-105 text-sm"
+              <button
+                onClick={() => setShowDemoModal(true)}
+                className="px-6 py-2.5 rounded-full font-medium text-white transition-all duration-300 hover:scale-105 hover:opacity-90 text-sm flex items-center gap-1.5"
                 style={{ backgroundColor: 'var(--color-accent)' }}
               >
-                <FiExternalLink className="inline mr-1.5" />
+                <FiExternalLink size={14} />
                 在线 Demo
-              </a>
+              </button>
               <a
-                href="https://github.com"
+                href="https://github.com/samzhao84-code/portfolio"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="px-6 py-2.5 rounded-full font-medium transition-all duration-300 hover:scale-105 border text-sm"
+                className="px-6 py-2.5 rounded-full font-medium transition-all duration-300 hover:scale-105 border text-sm flex items-center gap-1.5"
                 style={{ borderColor: 'var(--color-text)', color: 'var(--color-text)' }}
               >
-                <FiGithub className="inline mr-1.5" />
+                <FiGithub size={14} />
                 GitHub 源码
               </a>
             </div>
           </motion.div>
         </div>
       </div>
+
+      {/* Demo Modal */}
+      <AnimatePresence>
+        {showDemoModal && <DemoModal onClose={() => setShowDemoModal(false)} />}
+      </AnimatePresence>
     </section>
   )
 }
